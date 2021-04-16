@@ -239,7 +239,7 @@ MonoBehaviour:
   drawAgentsCS: {fileID: 7200000, guid: 9d6969cce8474ed4899115f5d816b0a5, type: 3}
   myCS: {fileID: 7200000, guid: 94f4c0edd21e54800b2f271736d3cb0c, type: 3}
   settings: {fileID: 11400000, guid: 0367b3dddb285494bbb8c9e43002e188, type: 2}
-  numFrogs: 256
+  numFrogs: 1024
   showAgentsOnly: 0
   filterMode: 1
   format: 48

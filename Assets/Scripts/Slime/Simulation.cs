@@ -12,6 +12,8 @@ public class Simulation : MonoBehaviour
 	const int FrogInit = 0;
 	const int FrogDisplay = 1;
 	const int FrogAct = 2;
+	const int FrogResolve = 3;
+	const int PixelResolve = 4;
 
 	public ComputeShader compute;
 	public ComputeShader drawAgentsCS;
@@ -35,6 +37,7 @@ public class Simulation : MonoBehaviour
 	Texture2D colourMapTexture;
 
 	ComputeBuffer frogsBuffer;
+	ComputeBuffer frogMailBuffer;
 
 	protected virtual void Start()
 	{
@@ -110,10 +113,25 @@ public class Simulation : MonoBehaviour
 		compute.SetInt("width", settings.width);
 		compute.SetInt("height", settings.height);
 
+
+
+		ComputeHelper.CreateStructuredBuffer<Frog>(ref frogsBuffer, numFrogs);
+		ComputeHelper.CreateStructuredBuffer<Frog>(ref frogMailBuffer, numFrogs);
+
 		// FrogInit
 		myCS.SetInt("numFrogs", numFrogs);
-		ComputeHelper.CreateAndSetBuffer<Frog>(ref frogsBuffer, numFrogs, myCS, "frogs", FrogInit);
+		myCS.SetBuffer(FrogInit, "frogs", frogsBuffer);
 		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogInit);
+
+		// FrogAct
+		myCS.SetBuffer(FrogAct, "frogs", frogsBuffer);
+		myCS.SetBuffer(FrogAct, "frogMail", frogMailBuffer);
+
+		// FrogResolve
+		myCS.SetBuffer(FrogResolve, "frogs", frogsBuffer);
+		myCS.SetBuffer(FrogResolve, "frogMail", frogMailBuffer);
+
+		// ComputeHelper.CreateAndSetBuffer<Frog>(ref frogMailBuffer, numFrogs, myCS, "frogMail", FrogInit);		
 	}
 
 	void FixedUpdate()
@@ -177,8 +195,14 @@ public class Simulation : MonoBehaviour
 
 		// FrogAct
 		myCS.SetFloat("time", Time.fixedTime);
-		ComputeHelper.CreateAndSetBuffer<Frog>(ref frogsBuffer, numFrogs, myCS, "frogs", FrogAct);
 		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogAct);
+
+		// FrogResolve
+		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogResolve);
+
+		// PixelResolve
+		// ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, PixelResolve);
+
 	}
 
 	void OnDestroy()
@@ -207,6 +231,7 @@ public class Simulation : MonoBehaviour
 	struct FrogMail {
 		// USER DEFINED
 		bool tag;
+		Vector2Int position;
 	}
 
 }

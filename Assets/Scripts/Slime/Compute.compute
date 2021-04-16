@@ -11,10 +11,11 @@ struct Frog {
 struct FrogMail {
     // USER DEFINED
     bool tag;
+    int2 position;
 };
 
 typedef float4 PixelData;
-typedef int4 PixelMail;
+typedef int3 PixelMail;
 
 ////////////////////////////////////////////////////////////////
 
@@ -59,7 +60,10 @@ void FrogInit (uint3 id : SV_DispatchThreadID)
 		return;
 	}
 
-    frogs[id.x].position = int2(id.x+100, id.x+100);
+    int2 pos = int2(id.x/32+200, id.x%32+200);
+    frogs[id.x].position = pos;     // move frog
+    // TODO:
+    // pixels[pos].x = 1;              // mark occupied
 }
 
 ////////////////////////////////////////////////////////////////
@@ -76,8 +80,7 @@ void FrogDisplay (uint3 id : SV_DispatchThreadID)
 		return;
 	}
 
-    Frog frog = frogs[id.x];
-    int2 pos = frog.position;
+    int2 pos = frogs[id.x].position;
     display[pos] = float4(1, 1, 1, 1);
 }
 
@@ -85,7 +88,8 @@ void FrogDisplay (uint3 id : SV_DispatchThreadID)
 
 // 2
 #pragma kernel FrogAct
-// RW   frogs   // TODO: temporary
+// R    frogs
+// W    frogMail
 
 [numthreads(16,1,1)]
 void FrogAct (uint3 id : SV_DispatchThreadID)
@@ -94,10 +98,9 @@ void FrogAct (uint3 id : SV_DispatchThreadID)
 		return;
 	}
 
-    Frog frog = frogs[id.x];
-    int2 pos = frog.position;
+    int2 pos = frogs[id.x].position;
 
-    uint random = hash(pos.y * width + pos.x + hash(id.x + time * 100000));
+    uint random = hash(id.x + time * 100000);
 
     switch (random % 4) {
         case 0: pos.x++; break;
@@ -106,21 +109,61 @@ void FrogAct (uint3 id : SV_DispatchThreadID)
         case 3: pos.y--; break;
     }
 
-    frogs[id.x].position = pos;
+    // frogs[id.x].position = pos;
+    frogMail[id.x].position = pos;
 
-
-    // int2 pos = frogs[id.x].position;
-    // frogs[id.x].position = int2(id.x+100, id.x+100+time*1000);
-
+    // TODO:
+    // if (pixels[pos].x == 0) {       // if spot open
+    //     pixelMail[pos].x = id.x;                // mail own id
+    //     InterlockedAdd(pixelMail[pos].y, 1);    // increase mail counter
+    // }
 }
 
+////////////////////////////////////////////////////////////////
 
-// // n
-// #pragma kernel FrogResolve
+// 3
+#pragma kernel FrogResolve
+// RC   frogMail
+// W    frogs
 
+[numthreads(16,1,1)]
+void FrogResolve (uint3 id : SV_DispatchThreadID)
+{
+	if (id.x >= numFrogs) {
+		return;
+	}
 
-// // n
+    int2 pos = frogMail[id.x].position;
+    frogs[id.x].position = pos;
+}
+
+////////////////////////////////////////////////////////////////
+
+// // 4
 // #pragma kernel SquareResolve
+// // RC   pixelMail
+// // W    pixels
+// // W    frogs   
+
+// [numthreads(8,8,1)]
+// void SquareResolve (uint3 id : SV_DispatchThreadID)
+// {
+// 	if (id.x < 0 || id.x >= (uint)width || id.y < 0 || id.y >= (uint)height) {
+// 		return;
+// 	}
+
+//     int frogId = pixelMail[id.xy].x;
+//     int count = pixelMail[id.xy].y;
+
+//     if (count == 1) {
+//         int2 oldPos = frogs[frogId].position;
+//         frogs[frogId].position = id.xy; // move frog
+//         pixels[oldPos].x = 0;           // mark unoccupied
+//         pixels[pos].y = 0;              // mark occupied
+//     }
+
+//     pixelMail[id.xy] = int2();  // clear mail
+// }
 
 
 // // n
