@@ -1,0 +1,130 @@
+
+
+struct FrogData {
+    // USER DEFINED
+    uint state;
+};
+struct Frog {
+    int2 position;
+    FrogData data;
+};
+struct FrogMail {
+    // USER DEFINED
+    bool tag;
+};
+
+typedef float4 PixelData;
+typedef int4 PixelMail;
+
+////////////////////////////////////////////////////////////////
+
+float time;
+float deltaTime;
+
+uint numFrogs;
+RWStructuredBuffer<Frog> frogs;
+RWStructuredBuffer<FrogMail> frogMail;
+
+int width;
+int height;
+RWTexture2D<PixelData> pixels;
+RWTexture2D<PixelMail> pixelMail;
+
+RWTexture2D<float4> display;
+
+////////////////////////////////////////////////////////////////
+
+// Hash function www.cs.ubc.ca/~rbridson/docs/schechter-sca08-turbulence.pdf
+uint hash(uint state)
+{
+    state ^= 2747636419u;
+    state *= 2654435769u;
+    state ^= state >> 16;
+    state *= 2654435769u;
+    state ^= state >> 16;
+    state *= 2654435769u;
+    return state;
+}
+
+////////////////////////////////////////////////////////////////
+
+// 0
+#pragma kernel FrogInit
+// W    frogs
+
+[numthreads(16,1,1)]
+void FrogInit (uint3 id : SV_DispatchThreadID)
+{
+	if (id.x >= numFrogs) {
+		return;
+	}
+
+    frogs[id.x].position = int2(id.x+100, id.x+100);
+}
+
+////////////////////////////////////////////////////////////////
+
+// 1
+#pragma kernel FrogDisplay
+// R    frogs
+// W    display
+
+[numthreads(16,1,1)]
+void FrogDisplay (uint3 id : SV_DispatchThreadID)
+{
+	if (id.x >= numFrogs) {
+		return;
+	}
+
+    Frog frog = frogs[id.x];
+    int2 pos = frog.position;
+    display[pos] = float4(1, 1, 1, 1);
+}
+
+////////////////////////////////////////////////////////////////
+
+// 2
+#pragma kernel FrogAct
+// RW   frogs   // TODO: temporary
+
+[numthreads(16,1,1)]
+void FrogAct (uint3 id : SV_DispatchThreadID)
+{
+	if (id.x >= numFrogs) {
+		return;
+	}
+
+    Frog frog = frogs[id.x];
+    int2 pos = frog.position;
+
+    uint random = hash(pos.y * width + pos.x + hash(id.x + time * 100000));
+
+    switch (random % 4) {
+        case 0: pos.x++; break;
+        case 1: pos.x--; break;
+        case 2: pos.y++; break;
+        case 3: pos.y--; break;
+    }
+
+    frogs[id.x].position = pos;
+
+
+    // int2 pos = frogs[id.x].position;
+    // frogs[id.x].position = int2(id.x+100, id.x+100+time*1000);
+
+}
+
+
+// // n
+// #pragma kernel FrogResolve
+
+
+// // n
+// #pragma kernel SquareResolve
+
+
+// // n
+// #pragma kernel PixelDisplay
+
+////////////////////////////////////////////////////////////////
+

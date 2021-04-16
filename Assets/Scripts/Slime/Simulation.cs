@@ -9,10 +9,16 @@ public class Simulation : MonoBehaviour
 	const int updateKernel = 0;
 	const int diffuseMapKernel = 1;
 
+	const int FrogInit = 0;
+	const int FrogDisplay = 1;
+	const int FrogAct = 2;
+
 	public ComputeShader compute;
 	public ComputeShader drawAgentsCS;
+	public ComputeShader myCS;
 
 	public SlimeSettings settings;
+	public int numFrogs = 64;
 
 	[Header("Display Settings")]
 	public bool showAgentsOnly;
@@ -27,6 +33,8 @@ public class Simulation : MonoBehaviour
 	ComputeBuffer agentBuffer;
 	ComputeBuffer settingsBuffer;
 	Texture2D colourMapTexture;
+
+	ComputeBuffer frogsBuffer;
 
 	protected virtual void Start()
 	{
@@ -102,7 +110,10 @@ public class Simulation : MonoBehaviour
 		compute.SetInt("width", settings.width);
 		compute.SetInt("height", settings.height);
 
-
+		// FrogInit
+		myCS.SetInt("numFrogs", numFrogs);
+		ComputeHelper.CreateAndSetBuffer<Frog>(ref frogsBuffer, numFrogs, myCS, "frogs", FrogInit);
+		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogInit);
 	}
 
 	void FixedUpdate()
@@ -115,18 +126,24 @@ public class Simulation : MonoBehaviour
 
 	void LateUpdate()
 	{
-		if (showAgentsOnly)
-		{
-			ComputeHelper.ClearRenderTexture(displayTexture);
+		// if (showAgentsOnly)
+		// {
+		// 	ComputeHelper.ClearRenderTexture(displayTexture);
 
-			drawAgentsCS.SetTexture(0, "TargetTexture", displayTexture);
-			ComputeHelper.Dispatch(drawAgentsCS, settings.numAgents, 1, 1, 0);
+		// 	drawAgentsCS.SetTexture(0, "TargetTexture", displayTexture);
+		// 	ComputeHelper.Dispatch(drawAgentsCS, settings.numAgents, 1, 1, 0);
 
-		}
-		else
-		{
-			ComputeHelper.CopyRenderTexture(trailMap, displayTexture);
-		}
+		// }
+		// else
+		// {
+		// 	ComputeHelper.CopyRenderTexture(trailMap, displayTexture);
+		// }
+
+		// FrogDisplay
+		ComputeHelper.ClearRenderTexture(displayTexture);
+		myCS.SetTexture(FrogDisplay, "display", displayTexture);
+		myCS.SetBuffer(FrogDisplay, "frogs", frogsBuffer);
+		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogDisplay);
 	}
 
 	void RunSimulation()
@@ -153,10 +170,15 @@ public class Simulation : MonoBehaviour
 		compute.SetFloat("diffuseRate", settings.diffuseRate);
 
 
-		ComputeHelper.Dispatch(compute, settings.numAgents, 1, 1, kernelIndex: updateKernel);
-		ComputeHelper.Dispatch(compute, settings.width, settings.height, 1, kernelIndex: diffuseMapKernel);
+		// ComputeHelper.Dispatch(compute, settings.numAgents, 1, 1, kernelIndex: updateKernel);
+		// ComputeHelper.Dispatch(compute, settings.width, settings.height, 1, kernelIndex: diffuseMapKernel);
 
-		ComputeHelper.CopyRenderTexture(diffusedTrailMap, trailMap);
+		// ComputeHelper.CopyRenderTexture(diffusedTrailMap, trailMap);
+
+		// FrogAct
+		myCS.SetFloat("time", Time.fixedTime);
+		ComputeHelper.CreateAndSetBuffer<Frog>(ref frogsBuffer, numFrogs, myCS, "frogs", FrogAct);
+		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogAct);
 	}
 
 	void OnDestroy()
@@ -174,5 +196,17 @@ public class Simulation : MonoBehaviour
 		public int speciesIndex;
 	}
 
+	struct FrogData {
+		// USER DEFINED
+		uint state;
+	}
+	struct Frog {
+		Vector2Int position;
+		FrogData data;
+	}
+	struct FrogMail {
+		// USER DEFINED
+		bool tag;
+	}
 
 }
