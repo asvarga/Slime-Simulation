@@ -238,6 +238,7 @@ public class Simulation : MonoBehaviour
 	{
 		// TODO: more
 		ComputeHelper.Release(agentBuffer, settingsBuffer);
+		ComputeHelper.Release(frogsBuffer, frogMailBuffer, pixelsBuffer, pixelMailBuffer);
 	}
 
 	public struct Agent

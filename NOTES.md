@@ -4,7 +4,7 @@
 
 # TODO
 
-- OnDestroy
+- PixelDisplay
 - update R/W/C comments
 - get rid of old shit
 
