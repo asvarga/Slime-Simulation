@@ -292,7 +292,6 @@ void PixelInit (uint3 id : SV_DispatchThreadID)
 // R    pixels
 // W    display
 
-
 [numthreads(8,8,1)]
 void PixelDisplay (uint3 id : SV_DispatchThreadID)
 {
