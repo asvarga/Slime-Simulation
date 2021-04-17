@@ -2,7 +2,9 @@
 
 struct FrogData {
     // USER DEFINED
-    uint state;
+    uint dir;
+    bool debug;
+    int2 prevPos;
 };
 struct Frog {
     int2 position;
@@ -12,6 +14,7 @@ struct FrogMail {
     // USER DEFINED
     bool tag;
     int2 position;
+    // FrogData data;
 };
 
 struct Pixel {
@@ -32,8 +35,8 @@ uint numFrogs;
 RWStructuredBuffer<Frog> frogs;
 RWStructuredBuffer<FrogMail> frogMail;
 
-uint width;
-uint height;
+int width;
+int height;
 RWStructuredBuffer<Pixel> pixels;
 RWStructuredBuffer<PixelMail> pixelMail;
 
@@ -79,6 +82,8 @@ void FrogInit (uint3 id : SV_DispatchThreadID)
     frogs[id.x].position = pos;         // move frog
     int ind = index(pos);
     pixels[ind].occupant = id.x;        // set occupant
+
+    frogs[id.x].data.dir = 0; 
 }
 
 ////////////////////////////////////////////////////////////////
@@ -96,7 +101,13 @@ void FrogDisplay (uint3 id : SV_DispatchThreadID)
 	}
 
     int2 pos = frogs[id.x].position;
-    // display[pos] = float4(1, 1, 1, 1);
+    switch (frogs[id.x].data.dir) {
+        case 0: display[pos] = float4(1,0,0,1); break;
+        case 1: display[pos] = float4(1,1,0,1); break;
+        case 2: display[pos] = float4(0,1,0,1); break;
+        case 3: display[pos] = float4(0,1,1,1); break;
+    }
+    // display[pos] = frogs[id.x].data.debug ? float4(1,0,0,1) : float4(0,1,0,1);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -106,6 +117,31 @@ void FrogDisplay (uint3 id : SV_DispatchThreadID)
 // R    frogs
 // W    frogMail
 
+bool inBounds(int2 pos) {
+    return (pos.x >= 0 && pos.y < width && pos.y >= 0 && pos.y < height);
+}
+
+bool legal(int2 pos) {
+    // if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height) return false;
+    if (!inBounds(pos)) return false;
+    int ind = index(pos);
+    return pixels[ind].occupant == -1;
+}
+
+int2 move(int2 pos, uint dir) {
+    switch (dir) {
+        case 0: pos.x++; break;
+        case 1: pos.y++; break;
+        case 2: pos.x--; break;
+        case 3: pos.y--; break;
+    }
+    return pos;
+}
+
+bool eq(int2 p1, int2 p2) {
+    return p1.x == p2.x && p1.y == p2.y;
+}
+
 [numthreads(16,1,1)]
 void FrogAct (uint3 id : SV_DispatchThreadID)
 {
@@ -114,24 +150,37 @@ void FrogAct (uint3 id : SV_DispatchThreadID)
 	}
 
     int2 pos = frogs[id.x].position;
+    FrogData data = frogs[id.x].data;
 
-    uint random = hash(id.x + time * 100000);
+    // <USER CODE>
+    // user should mutate data and pos
 
-    switch (random % 4) {
-        case 0: pos.x++; break;
-        case 1: pos.x--; break;
-        case 2: pos.y++; break;
-        case 3: pos.y--; break;
+    if (eq(pos, data.prevPos)) {  // failed to move
+        // data.dir = hash(id.x + hash(time * 1000)) % 4;  // random new direction
+        data.dir = (data.dir + 1) % 4;  // turn 90 deg
+        data.debug = true;
+    } else {
+        data.debug = false;
+    }
+    data.prevPos = pos;
+    pos = move(data.prevPos, data.dir);
+    if (!inBounds(pos)) {
+        data.dir = (data.dir + 2) % 4;  // turn 180 deg
+        pos = move(data.prevPos, data.dir);
     }
 
-    // frogs[id.x].position = pos;
-    // frogMail[id.x].position = pos;
+    // </USER CODE>
 
-    int ind = index(pos);
-    if (pixels[ind].occupant == -1) {               // unoccupied
+    frogs[id.x].data = data;
+
+    // TODO: also check adjacency
+    if (legal(pos)) {               // unoccupied
+        int ind = index(pos);
         pixelMail[ind].occupant = id.x;             // mail own id
         InterlockedAdd(pixelMail[ind].count, 1);    // increase mail counter
     }
+
+    // frogMail[id.x].data = data;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -148,8 +197,8 @@ void FrogResolve (uint3 id : SV_DispatchThreadID)
 		return;
 	}
 
-    int2 pos = frogMail[id.x].position;
-    // frogs[id.x].position = pos;
+    // int2 pos = frogMail[id.x].position;
+    // frogs[id.x].data = frogMail[id.x].data;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -229,8 +278,9 @@ void PixelDisplay (uint3 id : SV_DispatchThreadID)
     bool occupied = (pixels[ind].occupant != -1);
     bool collision = pixels[ind].collision;
     display[pos] = occupied ? float4(0,1,0,1) 
-                            : (collision ? float4(1,0,0,1) 
-                                         : float4(0,0,0,1));
+                            : float4(0,0,0,1);
+                            // : (collision ? float4(1,0,0,1) 
+                                        //  : float4(0,0,0,1));
 }
 
 ////////////////////////////////////////////////////////////////

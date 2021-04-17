@@ -4,12 +4,18 @@
 
 # TODO
 
+- debug the weird behavior
+- figure out int/uint
+- Conflict responses
+    - use the fancy InterlockedExchange approach in FrogAct
+
 - update R/W/C comments
-- get rid of old shit
+- better randomness
+- investigate sticking frogs
+- investigate strange repetitive patterns
 
 
 # LATER
 
-- Conflict responses?
 - Optimize
 

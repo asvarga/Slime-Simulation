@@ -175,11 +175,13 @@ public class Simulation : MonoBehaviour
 
 	void LateUpdate()
 	{
-		if (!showAgentsOnly) {
+		if (showAgentsOnly) {
+			// Clear
+			ComputeHelper.ClearRenderTexture(displayTexture);
+		} else {
 			// PixelDisplay
 			ComputeHelper.Dispatch(myCS, settings.width, settings.height, 1, PixelDisplay);
 		}
-
 		// FrogDisplay
 		ComputeHelper.Dispatch(myCS, settings.numFrogs, 1, 1, FrogDisplay);
 	}
@@ -245,7 +247,9 @@ public class Simulation : MonoBehaviour
 
 	struct FrogData {
 		// USER DEFINED
-		uint state;
+		uint dir;
+		bool debug;
+		Vector2Int prevPos;
 	}
 	struct Frog {
 		Vector2Int position;
@@ -255,6 +259,7 @@ public class Simulation : MonoBehaviour
 		// USER DEFINED
 		bool tag;
 		Vector2Int position;
+		// FrogData data;
 	}
 
 	struct Pixel {
