@@ -14,6 +14,7 @@ public class Simulation : MonoBehaviour
 	const int FrogAct = 2;
 	const int FrogResolve = 3;
 	const int PixelResolve = 4;
+	const int PixelInit = 5;
 
 	public ComputeShader compute;
 	public ComputeShader drawAgentsCS;
@@ -38,6 +39,9 @@ public class Simulation : MonoBehaviour
 
 	ComputeBuffer frogsBuffer;
 	ComputeBuffer frogMailBuffer;
+	ComputeBuffer pixelsBuffer;
+	ComputeBuffer pixelMailBuffer;
+
 
 	protected virtual void Start()
 	{
@@ -114,24 +118,48 @@ public class Simulation : MonoBehaviour
 		compute.SetInt("height", settings.height);
 
 
+		int numPixels = settings.width * settings.height;
 
 		ComputeHelper.CreateStructuredBuffer<Frog>(ref frogsBuffer, numFrogs);
-		ComputeHelper.CreateStructuredBuffer<Frog>(ref frogMailBuffer, numFrogs);
+		ComputeHelper.CreateStructuredBuffer<FrogMail>(ref frogMailBuffer, numFrogs);
+		ComputeHelper.CreateStructuredBuffer<Pixel>(ref pixelsBuffer, numPixels);
+		ComputeHelper.CreateStructuredBuffer<PixelMail>(ref pixelMailBuffer, numPixels);
+
+		// PixelInit
+		// myCS.SetInt("numPixels", numPixels);
+		myCS.SetInt("width", settings.width);
+		myCS.SetInt("height", settings.height);
+		myCS.SetBuffer(PixelInit, "pixels", pixelsBuffer);
+		myCS.SetBuffer(PixelInit, "pixelMail", pixelMailBuffer);
+		ComputeHelper.Dispatch(myCS, settings.width, settings.height, 1, PixelInit);
 
 		// FrogInit
 		myCS.SetInt("numFrogs", numFrogs);
 		myCS.SetBuffer(FrogInit, "frogs", frogsBuffer);
-		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogInit);
+		myCS.SetBuffer(FrogInit, "pixels", pixelsBuffer);
+		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogInit);	
 
 		// FrogAct
 		myCS.SetBuffer(FrogAct, "frogs", frogsBuffer);
 		myCS.SetBuffer(FrogAct, "frogMail", frogMailBuffer);
+		myCS.SetBuffer(FrogAct, "pixels", pixelsBuffer);
+		myCS.SetBuffer(FrogAct, "pixelMail", pixelMailBuffer);
 
 		// FrogResolve
 		myCS.SetBuffer(FrogResolve, "frogs", frogsBuffer);
 		myCS.SetBuffer(FrogResolve, "frogMail", frogMailBuffer);
 
-		// ComputeHelper.CreateAndSetBuffer<Frog>(ref frogMailBuffer, numFrogs, myCS, "frogMail", FrogInit);		
+		// PixelResolve
+		myCS.SetInt("width", settings.width);
+		myCS.SetInt("height", settings.height);
+		myCS.SetBuffer(PixelResolve, "pixels", pixelsBuffer);
+		myCS.SetBuffer(PixelResolve, "pixelMail", pixelMailBuffer);
+		myCS.SetBuffer(PixelResolve, "frogs", frogsBuffer);
+
+		// FrogDisplay
+		myCS.SetBuffer(FrogDisplay, "frogs", frogsBuffer);
+		myCS.SetTexture(FrogDisplay, "display", displayTexture);
+
 	}
 
 	void FixedUpdate()
@@ -158,9 +186,7 @@ public class Simulation : MonoBehaviour
 		// }
 
 		// FrogDisplay
-		ComputeHelper.ClearRenderTexture(displayTexture);
-		myCS.SetTexture(FrogDisplay, "display", displayTexture);
-		myCS.SetBuffer(FrogDisplay, "frogs", frogsBuffer);
+		ComputeHelper.ClearRenderTexture(displayTexture);	// TODO: remove once PixelDisplay implemented
 		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogDisplay);
 	}
 
@@ -193,6 +219,9 @@ public class Simulation : MonoBehaviour
 
 		// ComputeHelper.CopyRenderTexture(diffusedTrailMap, trailMap);
 
+
+
+
 		// FrogAct
 		myCS.SetFloat("time", Time.fixedTime);
 		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogAct);
@@ -201,13 +230,13 @@ public class Simulation : MonoBehaviour
 		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogResolve);
 
 		// PixelResolve
-		// ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, PixelResolve);
+		ComputeHelper.Dispatch(myCS, settings.width, settings.height, 1, PixelResolve);
 
 	}
 
 	void OnDestroy()
 	{
-
+		// TODO: more
 		ComputeHelper.Release(agentBuffer, settingsBuffer);
 	}
 
@@ -233,5 +262,13 @@ public class Simulation : MonoBehaviour
 		bool tag;
 		Vector2Int position;
 	}
+
+	struct Pixel {
+		int frogId;
+	};
+	struct PixelMail {
+		int frogId;
+		int count;
+	};
 
 }
