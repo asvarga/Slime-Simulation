@@ -16,6 +16,7 @@ struct FrogMail {
 
 struct Pixel {
     int occupant;
+    bool collision;
 };
 struct PixelMail {
     int occupant;
@@ -31,8 +32,8 @@ uint numFrogs;
 RWStructuredBuffer<Frog> frogs;
 RWStructuredBuffer<FrogMail> frogMail;
 
-int width;
-int height;
+uint width;
+uint height;
 RWStructuredBuffer<Pixel> pixels;
 RWStructuredBuffer<PixelMail> pixelMail;
 
@@ -73,7 +74,8 @@ void FrogInit (uint3 id : SV_DispatchThreadID)
 		return;
 	}
 
-    int2 pos = int2(id.x/32+200, id.x%32+200);
+    uint s = sqrt(numFrogs);
+    int2 pos = int2(id.x/s+width/2-s/2, id.x%s+height/2-s/2);
     frogs[id.x].position = pos;         // move frog
     int ind = index(pos);
     pixels[ind].occupant = id.x;        // set occupant
@@ -94,7 +96,7 @@ void FrogDisplay (uint3 id : SV_DispatchThreadID)
 	}
 
     int2 pos = frogs[id.x].position;
-    display[pos] = float4(1, 1, 1, 1);
+    // display[pos] = float4(1, 1, 1, 1);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -172,6 +174,7 @@ void PixelResolve (uint3 id : SV_DispatchThreadID)
     pixelMail[ind].count = 0;               // clear count
 
     // we can assume that if this pixel is occupied => count == 0
+    pixels[ind].collision = (count > 1);
     if (count != 1) return;                 // inactive/conflicts
 
     int occupant = pixelMail[ind].occupant;
@@ -208,8 +211,27 @@ void PixelInit (uint3 id : SV_DispatchThreadID)
 ////////////////////////////////////////////////////////////////
 
 
-// // n
-// #pragma kernel PixelDisplay
+// 6
+#pragma kernel PixelDisplay
+// R    pixels
+// W    display
+
+[numthreads(8,8,1)]
+void PixelDisplay (uint3 id : SV_DispatchThreadID)
+{
+	if (id.x < 0 || id.x >= (uint)width || id.y < 0 || id.y >= (uint)height) {
+		return;
+	}
+
+    int2 pos = id.xy;
+    int ind = index(pos);
+
+    bool occupied = (pixels[ind].occupant != -1);
+    bool collision = pixels[ind].collision;
+    display[pos] = occupied ? float4(0,1,0,1) 
+                            : (collision ? float4(1,0,0,1) 
+                                         : float4(0,0,0,1));
+}
 
 ////////////////////////////////////////////////////////////////
 

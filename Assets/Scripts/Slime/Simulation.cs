@@ -15,6 +15,7 @@ public class Simulation : MonoBehaviour
 	const int FrogResolve = 3;
 	const int PixelResolve = 4;
 	const int PixelInit = 5;
+	const int PixelDisplay = 6;
 
 	public ComputeShader compute;
 	public ComputeShader drawAgentsCS;
@@ -126,7 +127,6 @@ public class Simulation : MonoBehaviour
 		ComputeHelper.CreateStructuredBuffer<PixelMail>(ref pixelMailBuffer, numPixels);
 
 		// PixelInit
-		// myCS.SetInt("numPixels", numPixels);
 		myCS.SetInt("width", settings.width);
 		myCS.SetInt("height", settings.height);
 		myCS.SetBuffer(PixelInit, "pixels", pixelsBuffer);
@@ -160,6 +160,10 @@ public class Simulation : MonoBehaviour
 		myCS.SetBuffer(FrogDisplay, "frogs", frogsBuffer);
 		myCS.SetTexture(FrogDisplay, "display", displayTexture);
 
+		// PixelDisplay
+		myCS.SetBuffer(PixelDisplay, "pixels", pixelsBuffer);
+		myCS.SetTexture(PixelDisplay, "display", displayTexture);
+
 	}
 
 	void FixedUpdate()
@@ -185,8 +189,10 @@ public class Simulation : MonoBehaviour
 		// 	ComputeHelper.CopyRenderTexture(trailMap, displayTexture);
 		// }
 
+		// PixelDisplay
+		ComputeHelper.Dispatch(myCS, settings.width, settings.height, 1, PixelDisplay);
+
 		// FrogDisplay
-		ComputeHelper.ClearRenderTexture(displayTexture);	// TODO: remove once PixelDisplay implemented
 		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogDisplay);
 	}
 
@@ -266,6 +272,7 @@ public class Simulation : MonoBehaviour
 
 	struct Pixel {
 		int frogId;
+		bool collision;
 	};
 	struct PixelMail {
 		int frogId;
