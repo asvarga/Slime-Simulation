@@ -4,10 +4,10 @@ using ComputeShaderUtility;
 
 public class Simulation : MonoBehaviour
 {
-	public enum SpawnMode { Random, Point, InwardCircle, RandomCircle }
+	// public enum SpawnMode { Random, Point, InwardCircle, RandomCircle }
 
-	const int updateKernel = 0;
-	const int diffuseMapKernel = 1;
+	// const int updateKernel = 0;
+	// const int diffuseMapKernel = 1;
 
 	const int FrogInit = 0;
 	const int FrogDisplay = 1;
@@ -17,12 +17,11 @@ public class Simulation : MonoBehaviour
 	const int PixelInit = 5;
 	const int PixelDisplay = 6;
 
-	public ComputeShader compute;
-	public ComputeShader drawAgentsCS;
+	// public ComputeShader compute;
+	// public ComputeShader drawAgentsCS;
 	public ComputeShader myCS;
 
 	public SlimeSettings settings;
-	public int numFrogs = 64;
 
 	[Header("Display Settings")]
 	public bool showAgentsOnly;
@@ -54,75 +53,75 @@ public class Simulation : MonoBehaviour
 	void Init()
 	{
 
-		// Create render textures
-		ComputeHelper.CreateRenderTexture(ref trailMap, settings.width, settings.height, filterMode, format);
-		ComputeHelper.CreateRenderTexture(ref diffusedTrailMap, settings.width, settings.height, filterMode, format);
+		// // Create render textures
+		// ComputeHelper.CreateRenderTexture(ref trailMap, settings.width, settings.height, filterMode, format);
+		// ComputeHelper.CreateRenderTexture(ref diffusedTrailMap, settings.width, settings.height, filterMode, format);
 		ComputeHelper.CreateRenderTexture(ref displayTexture, settings.width, settings.height, filterMode, format);
 
-		// Create agents with initial positions and angles
-		Agent[] agents = new Agent[settings.numAgents];
-		for (int i = 0; i < agents.Length; i++)
-		{
-			Vector2 centre = new Vector2(settings.width / 2, settings.height / 2);
-			Vector2 startPos = Vector2.zero;
-			float randomAngle = Random.value * Mathf.PI * 2;
-			float angle = 0;
+		// // Create agents with initial positions and angles
+		// Agent[] agents = new Agent[settings.numAgents];
+		// for (int i = 0; i < agents.Length; i++)
+		// {
+		// 	Vector2 centre = new Vector2(settings.width / 2, settings.height / 2);
+		// 	Vector2 startPos = Vector2.zero;
+		// 	float randomAngle = Random.value * Mathf.PI * 2;
+		// 	float angle = 0;
 
-			if (settings.spawnMode == SpawnMode.Point)
-			{
-				startPos = centre;
-				angle = randomAngle;
-			}
-			else if (settings.spawnMode == SpawnMode.Random)
-			{
-				startPos = new Vector2(Random.Range(0, settings.width), Random.Range(0, settings.height));
-				angle = randomAngle;
-			}
-			else if (settings.spawnMode == SpawnMode.InwardCircle)
-			{
-				startPos = centre + Random.insideUnitCircle * settings.height * 0.5f;
-				angle = Mathf.Atan2((centre - startPos).normalized.y, (centre - startPos).normalized.x);
-			}
-			else if (settings.spawnMode == SpawnMode.RandomCircle)
-			{
-				startPos = centre + Random.insideUnitCircle * settings.height * 0.15f;
-				angle = randomAngle;
-			}
+		// 	if (settings.spawnMode == SpawnMode.Point)
+		// 	{
+		// 		startPos = centre;
+		// 		angle = randomAngle;
+		// 	}
+		// 	else if (settings.spawnMode == SpawnMode.Random)
+		// 	{
+		// 		startPos = new Vector2(Random.Range(0, settings.width), Random.Range(0, settings.height));
+		// 		angle = randomAngle;
+		// 	}
+		// 	else if (settings.spawnMode == SpawnMode.InwardCircle)
+		// 	{
+		// 		startPos = centre + Random.insideUnitCircle * settings.height * 0.5f;
+		// 		angle = Mathf.Atan2((centre - startPos).normalized.y, (centre - startPos).normalized.x);
+		// 	}
+		// 	else if (settings.spawnMode == SpawnMode.RandomCircle)
+		// 	{
+		// 		startPos = centre + Random.insideUnitCircle * settings.height * 0.15f;
+		// 		angle = randomAngle;
+		// 	}
 
-			Vector3Int speciesMask;
-			int speciesIndex = 0;
-			int numSpecies = settings.speciesSettings.Length;
+		// 	Vector3Int speciesMask;
+		// 	int speciesIndex = 0;
+		// 	int numSpecies = settings.speciesSettings.Length;
 
-			if (numSpecies == 1)
-			{
-				speciesMask = Vector3Int.one;
-			}
-			else
-			{
-				int species = Random.Range(1, numSpecies + 1);
-				speciesIndex = species - 1;
-				speciesMask = new Vector3Int((species == 1) ? 1 : 0, (species == 2) ? 1 : 0, (species == 3) ? 1 : 0);
-			}
-
-
-
-			agents[i] = new Agent() { position = startPos, angle = angle, speciesMask = speciesMask, speciesIndex = speciesIndex };
-		}
-
-		ComputeHelper.CreateAndSetBuffer<Agent>(ref agentBuffer, agents, compute, "agents", updateKernel);
-		compute.SetInt("numAgents", settings.numAgents);
-		drawAgentsCS.SetBuffer(0, "agents", agentBuffer);
-		drawAgentsCS.SetInt("numAgents", settings.numAgents);
+		// 	if (numSpecies == 1)
+		// 	{
+		// 		speciesMask = Vector3Int.one;
+		// 	}
+		// 	else
+		// 	{
+		// 		int species = Random.Range(1, numSpecies + 1);
+		// 		speciesIndex = species - 1;
+		// 		speciesMask = new Vector3Int((species == 1) ? 1 : 0, (species == 2) ? 1 : 0, (species == 3) ? 1 : 0);
+		// 	}
 
 
-		compute.SetInt("width", settings.width);
-		compute.SetInt("height", settings.height);
+
+		// 	agents[i] = new Agent() { position = startPos, angle = angle, speciesMask = speciesMask, speciesIndex = speciesIndex };
+		// }
+
+		// ComputeHelper.CreateAndSetBuffer<Agent>(ref agentBuffer, agents, compute, "agents", updateKernel);
+		// compute.SetInt("numAgents", settings.numAgents);
+		// drawAgentsCS.SetBuffer(0, "agents", agentBuffer);
+		// drawAgentsCS.SetInt("numAgents", settings.numAgents);
+
+
+		// compute.SetInt("width", settings.width);
+		// compute.SetInt("height", settings.height);
 
 
 		int numPixels = settings.width * settings.height;
 
-		ComputeHelper.CreateStructuredBuffer<Frog>(ref frogsBuffer, numFrogs);
-		ComputeHelper.CreateStructuredBuffer<FrogMail>(ref frogMailBuffer, numFrogs);
+		ComputeHelper.CreateStructuredBuffer<Frog>(ref frogsBuffer, settings.numFrogs);
+		ComputeHelper.CreateStructuredBuffer<FrogMail>(ref frogMailBuffer, settings.numFrogs);
 		ComputeHelper.CreateStructuredBuffer<Pixel>(ref pixelsBuffer, numPixels);
 		ComputeHelper.CreateStructuredBuffer<PixelMail>(ref pixelMailBuffer, numPixels);
 
@@ -134,10 +133,10 @@ public class Simulation : MonoBehaviour
 		ComputeHelper.Dispatch(myCS, settings.width, settings.height, 1, PixelInit);
 
 		// FrogInit
-		myCS.SetInt("numFrogs", numFrogs);
+		myCS.SetInt("numFrogs", settings.numFrogs);
 		myCS.SetBuffer(FrogInit, "frogs", frogsBuffer);
 		myCS.SetBuffer(FrogInit, "pixels", pixelsBuffer);
-		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogInit);	
+		ComputeHelper.Dispatch(myCS, settings.numFrogs, 1, 1, FrogInit);	
 
 		// FrogAct
 		myCS.SetBuffer(FrogAct, "frogs", frogsBuffer);
@@ -176,48 +175,37 @@ public class Simulation : MonoBehaviour
 
 	void LateUpdate()
 	{
-		// if (showAgentsOnly)
-		// {
-		// 	ComputeHelper.ClearRenderTexture(displayTexture);
-
-		// 	drawAgentsCS.SetTexture(0, "TargetTexture", displayTexture);
-		// 	ComputeHelper.Dispatch(drawAgentsCS, settings.numAgents, 1, 1, 0);
-
-		// }
-		// else
-		// {
-		// 	ComputeHelper.CopyRenderTexture(trailMap, displayTexture);
-		// }
-
-		// PixelDisplay
-		ComputeHelper.Dispatch(myCS, settings.width, settings.height, 1, PixelDisplay);
+		if (!showAgentsOnly) {
+			// PixelDisplay
+			ComputeHelper.Dispatch(myCS, settings.width, settings.height, 1, PixelDisplay);
+		}
 
 		// FrogDisplay
-		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogDisplay);
+		ComputeHelper.Dispatch(myCS, settings.numFrogs, 1, 1, FrogDisplay);
 	}
 
 	void RunSimulation()
 	{
 
-		var speciesSettings = settings.speciesSettings;
-		ComputeHelper.CreateStructuredBuffer(ref settingsBuffer, speciesSettings);
-		compute.SetBuffer(0, "speciesSettings", settingsBuffer);
+		// var speciesSettings = settings.speciesSettings;
+		// ComputeHelper.CreateStructuredBuffer(ref settingsBuffer, speciesSettings);
+		// compute.SetBuffer(0, "speciesSettings", settingsBuffer);
 
 
-		// Assign textures
-		compute.SetTexture(updateKernel, "TrailMap", trailMap);
-		compute.SetTexture(updateKernel, "DiffusedTrailMap", diffusedTrailMap);
+		// // Assign textures
+		// compute.SetTexture(updateKernel, "TrailMap", trailMap);
+		// compute.SetTexture(updateKernel, "DiffusedTrailMap", diffusedTrailMap);
 
-		compute.SetTexture(diffuseMapKernel, "TrailMap", trailMap);
-		compute.SetTexture(diffuseMapKernel, "DiffusedTrailMap", diffusedTrailMap);
+		// compute.SetTexture(diffuseMapKernel, "TrailMap", trailMap);
+		// compute.SetTexture(diffuseMapKernel, "DiffusedTrailMap", diffusedTrailMap);
 
-		// Assign settings
-		compute.SetFloat("deltaTime", Time.fixedDeltaTime);
-		compute.SetFloat("time", Time.fixedTime);
+		// // Assign settings
+		// compute.SetFloat("deltaTime", Time.fixedDeltaTime);
+		// compute.SetFloat("time", Time.fixedTime);
 
-		compute.SetFloat("trailWeight", settings.trailWeight);
-		compute.SetFloat("decayRate", settings.decayRate);
-		compute.SetFloat("diffuseRate", settings.diffuseRate);
+		// compute.SetFloat("trailWeight", settings.trailWeight);
+		// compute.SetFloat("decayRate", settings.decayRate);
+		// compute.SetFloat("diffuseRate", settings.diffuseRate);
 
 
 		// ComputeHelper.Dispatch(compute, settings.numAgents, 1, 1, kernelIndex: updateKernel);
@@ -230,10 +218,10 @@ public class Simulation : MonoBehaviour
 
 		// FrogAct
 		myCS.SetFloat("time", Time.fixedTime);
-		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogAct);
+		ComputeHelper.Dispatch(myCS, settings.numFrogs, 1, 1, FrogAct);
 
 		// FrogResolve
-		ComputeHelper.Dispatch(myCS, numFrogs, 1, 1, FrogResolve);
+		ComputeHelper.Dispatch(myCS, settings.numFrogs, 1, 1, FrogResolve);
 
 		// PixelResolve
 		ComputeHelper.Dispatch(myCS, settings.width, settings.height, 1, PixelResolve);
@@ -242,8 +230,7 @@ public class Simulation : MonoBehaviour
 
 	void OnDestroy()
 	{
-		// TODO: more
-		ComputeHelper.Release(agentBuffer, settingsBuffer);
+		// ComputeHelper.Release(agentBuffer, settingsBuffer);
 		ComputeHelper.Release(frogsBuffer, frogMailBuffer, pixelsBuffer, pixelMailBuffer);
 	}
 
