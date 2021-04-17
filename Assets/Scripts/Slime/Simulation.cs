@@ -246,20 +246,22 @@ public class Simulation : MonoBehaviour
 	}
 
 	struct FrogData {
-		// USER DEFINED
+		// <USER>
 		uint dir;
 		bool debug;
 		Vector2Int prevPos;
+		// </USER>
 	}
 	struct Frog {
 		Vector2Int position;
 		FrogData data;
 	}
 	struct FrogMail {
-		// USER DEFINED
+		// <USER>
 		bool tag;
 		Vector2Int position;
 		// FrogData data;
+		// </USER>
 	}
 
 	struct Pixel {

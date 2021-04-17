@@ -1,20 +1,33 @@
 
 
+/*
+- We go to great lengths to avoid race conditions
+- Each kernel annotates its reference capabilites to the various buffers
+    - (R)ead, (W)rite, (C)lear, (A)tomic Update
+- A kernel can only have R+W to a buffer if it has 1-to-1 ownship
+    - i.e. no reading or writing of other values
+
+- <USER></USER> tags mark user owned code
+    - i.e. where foreign code might be sliced in
+*/
+
 struct FrogData {
-    // USER DEFINED
+    // <USER>
     uint dir;
     bool debug;
     int2 prevPos;
+    // </USER>
 };
 struct Frog {
     int2 position;
     FrogData data;
 };
 struct FrogMail {
-    // USER DEFINED
+    // <USER>
     bool tag;
     int2 position;
     // FrogData data;
+    // </USER>
 };
 
 struct Pixel {
@@ -69,6 +82,7 @@ int2 position(uint ind) {
 // 0
 #pragma kernel FrogInit
 // W    frogs
+// W    pixels
 
 [numthreads(16,1,1)]
 void FrogInit (uint3 id : SV_DispatchThreadID)
@@ -83,7 +97,18 @@ void FrogInit (uint3 id : SV_DispatchThreadID)
     int ind = index(pos);
     pixels[ind].occupant = id.x;        // set occupant
 
-    frogs[id.x].data.dir = 0; 
+    FrogData data = frogs[id.x].data;
+
+    // <USER>
+    // user should mutate data
+
+    data.dir = 0;
+    // data.dir = hash(id.x + hash(time * 1000)) % 4; 
+    // data.dir = (pos.x*2 + pos.y) % 4;
+
+    // </USER>
+
+    frogs[id.x].data = data;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -114,8 +139,10 @@ void FrogDisplay (uint3 id : SV_DispatchThreadID)
 
 // 2
 #pragma kernel FrogAct
-// R    frogs
+// RW   frogs
 // W    frogMail
+// R    pixels
+// A    pixelMail
 
 bool inBounds(int2 pos) {
     return (pos.x >= 0 && pos.y < width && pos.y >= 0 && pos.y < height);
@@ -123,9 +150,10 @@ bool inBounds(int2 pos) {
 
 bool legal(int2 pos) {
     // if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height) return false;
-    if (!inBounds(pos)) return false;
-    int ind = index(pos);
-    return pixels[ind].occupant == -1;
+    // if (!inBounds(pos)) return false;
+    // int ind = index(pos);
+    // return pixels[ind].occupant == -1;
+    return inBounds(pos) && pixels[index(pos)].occupant == -1;
 }
 
 int2 move(int2 pos, uint dir) {
@@ -152,11 +180,11 @@ void FrogAct (uint3 id : SV_DispatchThreadID)
     int2 pos = frogs[id.x].position;
     FrogData data = frogs[id.x].data;
 
-    // <USER CODE>
+    // <USER>
     // user should mutate data and pos
 
     if (eq(pos, data.prevPos)) {  // failed to move
-        data.dir = hash(id.x + hash(time * 1000)) % 4;  // random new direction
+        // data.dir = hash(id.x + hash(time * 1000)) % 4;  // random new direction
         data.dir = (data.dir + 1) % 4;  // turn 90 deg
         data.debug = true;
     } else {
@@ -169,7 +197,7 @@ void FrogAct (uint3 id : SV_DispatchThreadID)
         pos = move(data.prevPos, data.dir);
     }
 
-    // </USER CODE>
+    // </USER>
 
     frogs[id.x].data = data;
 
@@ -241,7 +269,6 @@ void PixelResolve (uint3 id : SV_DispatchThreadID)
 // 5
 #pragma kernel PixelInit
 // W    pixels 
-// W    pixelMail
 
 [numthreads(8,8,1)]
 void PixelInit (uint3 id : SV_DispatchThreadID)
@@ -254,7 +281,7 @@ void PixelInit (uint3 id : SV_DispatchThreadID)
     int ind = index(pos);
 
     pixels[ind].occupant = -1;
-    pixelMail[ind].occupant = -1;
+    // pixelMail[ind].occupant = -1;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -264,6 +291,7 @@ void PixelInit (uint3 id : SV_DispatchThreadID)
 #pragma kernel PixelDisplay
 // R    pixels
 // W    display
+
 
 [numthreads(8,8,1)]
 void PixelDisplay (uint3 id : SV_DispatchThreadID)
