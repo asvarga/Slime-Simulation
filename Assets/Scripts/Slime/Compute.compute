@@ -18,11 +18,11 @@ struct FrogMail {
 };
 
 struct Pixel {
-    int occupant;
+    uint occupant;
     bool collision;
 };
 struct PixelMail {
-    int occupant;
+    uint occupant;
     int count;
 };
 
@@ -78,7 +78,7 @@ void FrogInit (uint3 id : SV_DispatchThreadID)
 	}
 
     uint s = sqrt(numFrogs);
-    int2 pos = int2(id.x/s+width/2-s/2, id.x%s+height/2-s/2);
+    int2 pos = int2(id.x/s+(uint)width/2-s/2, id.x%s+(uint)height/2-s/2);
     frogs[id.x].position = pos;         // move frog
     int ind = index(pos);
     pixels[ind].occupant = id.x;        // set occupant
@@ -156,7 +156,7 @@ void FrogAct (uint3 id : SV_DispatchThreadID)
     // user should mutate data and pos
 
     if (eq(pos, data.prevPos)) {  // failed to move
-        // data.dir = hash(id.x + hash(time * 1000)) % 4;  // random new direction
+        data.dir = hash(id.x + hash(time * 1000)) % 4;  // random new direction
         data.dir = (data.dir + 1) % 4;  // turn 90 deg
         data.debug = true;
     } else {
@@ -226,7 +226,7 @@ void PixelResolve (uint3 id : SV_DispatchThreadID)
     pixels[ind].collision = (count > 1);
     if (count != 1) return;                 // inactive/conflicts
 
-    int occupant = pixelMail[ind].occupant;
+    uint occupant = pixelMail[ind].occupant;
     int2 oldPos = frogs[occupant].position;
     int oldInd = index(oldPos);
     

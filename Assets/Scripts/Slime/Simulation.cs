@@ -263,11 +263,11 @@ public class Simulation : MonoBehaviour
 	}
 
 	struct Pixel {
-		int frogId;
+		uint occupant;
 		bool collision;
 	};
 	struct PixelMail {
-		int frogId;
+		uint occupant;
 		int count;
 	};
 
