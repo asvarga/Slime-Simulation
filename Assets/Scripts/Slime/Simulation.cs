@@ -147,6 +147,8 @@ public class Simulation : MonoBehaviour
 		// FrogResolve
 		myCS.SetBuffer(FrogResolve, "frogs", frogsBuffer);
 		myCS.SetBuffer(FrogResolve, "frogMail", frogMailBuffer);
+		myCS.SetBuffer(FrogResolve, "pixels", pixelsBuffer);
+		myCS.SetBuffer(FrogResolve, "pixelMail", pixelMailBuffer);
 
 		// PixelResolve
 		myCS.SetInt("width", settings.width);
@@ -254,6 +256,7 @@ public class Simulation : MonoBehaviour
 	}
 	struct Frog {
 		Vector2Int position;
+		uint status;
 		FrogData data;
 	}
 	struct FrogMail {
@@ -269,7 +272,6 @@ public class Simulation : MonoBehaviour
 		bool collision;
 	};
 	struct PixelMail {
-		uint occupant;
 		int count;
 	};
 

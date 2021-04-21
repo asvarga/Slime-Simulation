@@ -5,16 +5,29 @@
 # TODO
 
 - Conflict responses (see notes below)
-    - do this in a new branch
+    - debug
 - message dispersal example
+- birth+death
 - blur
 
 # LATER
 
-- Optimize
 - Frog and Pixels may update different number of times per frame
 
+# OPTIMIZE
+
+- change `numthreads` in kernels
+- data representation
+    - use smaller ints where possible
+
 # NOTES
+
+- Conflict responses: **ignore the below strategy**
+    - keep the counter
+    - every frog checks the counter before moving themselves
+    - return the count to each frog as the status
+        - this could be useful for message dispersal
+    - this mainly only requires moving resolve logic from pixel -> frog
 
 - Conflict responses; use the fancy InterlockedExchange approach in FrogAct
     - make sure PixelMail.occupant is set to -1 every step
@@ -56,5 +69,3 @@
 - Is it possible to send conflict message to just a single frogMail? (defer)
     - could just send message to self, and check if still in square
     - this is complicated and may not even be faster
-
-

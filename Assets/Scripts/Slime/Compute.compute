@@ -20,6 +20,7 @@ struct FrogData {
 };
 struct Frog {
     int2 position;
+    uint status;
     FrogData data;
 };
 struct FrogMail {
@@ -35,7 +36,6 @@ struct Pixel {
     bool collision;
 };
 struct PixelMail {
-    uint occupant;
     int count;
 };
 
@@ -204,8 +204,8 @@ void FrogAct (uint3 id : SV_DispatchThreadID)
     // TODO: also check adjacency
     if (legal(pos)) {               // unoccupied
         int ind = index(pos);
-        pixelMail[ind].occupant = id.x;             // mail own id
-        InterlockedAdd(pixelMail[ind].count, 1);    // increase mail counter
+        frogMail[id.x].position = pos;
+        InterlockedAdd(pixelMail[ind].count, 1);    // atomically increase mail counter
     }
 
     // frogMail[id.x].data = data;
@@ -215,8 +215,10 @@ void FrogAct (uint3 id : SV_DispatchThreadID)
 
 // 3
 #pragma kernel FrogResolve
-// RC   frogMail
+// R    frogMail
+// R    pixelMail
 // W    frogs
+// W    pixels
 
 [numthreads(16,1,1)]
 void FrogResolve (uint3 id : SV_DispatchThreadID)
@@ -225,8 +227,23 @@ void FrogResolve (uint3 id : SV_DispatchThreadID)
 		return;
 	}
 
-    // int2 pos = frogMail[id.x].position;
     // frogs[id.x].data = frogMail[id.x].data;
+
+    int2 oldPos = frogs[id.x].position;
+    int2 newPos = frogMail[id.x].position;
+    int oldInd = index(oldPos);
+    int newInd = index(newPos);
+
+    int count = pixelMail[newInd].count;    // get count
+
+    // we can assume that if this pixel is occupied => count == 0
+    pixels[newInd].collision = (count > 1);
+    frogs[id.x].status = count;
+    if (count != 1) return;                 // inactive/conflicts
+    
+    frogs[id.x].position = newPos;          // move frog
+    pixels[oldInd].occupant = -1;           // clear occupant
+    pixels[newInd].occupant = id.x;         // set occupant
 }
 
 ////////////////////////////////////////////////////////////////
@@ -247,20 +264,7 @@ void PixelResolve (uint3 id : SV_DispatchThreadID)
     int2 pos = id.xy;
     int ind = index(pos);
 
-    int count = pixelMail[ind].count;       // get count
-    pixelMail[ind].count = 0;               // clear count
-
-    // we can assume that if this pixel is occupied => count == 0
-    pixels[ind].collision = (count > 1);
-    if (count != 1) return;                 // inactive/conflicts
-
-    uint occupant = pixelMail[ind].occupant;
-    int2 oldPos = frogs[occupant].position;
-    int oldInd = index(oldPos);
-    
-    frogs[occupant].position = pos;         // move frog
-    pixels[oldInd].occupant = -1;           // clear occupant
-    pixels[ind].occupant = occupant;        // set occupant
+    pixelMail[ind].count = 0;               // clear count (KEEP)
 }
 
 

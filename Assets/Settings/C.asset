@@ -13,16 +13,6 @@ MonoBehaviour:
   m_Name: C
   m_EditorClassIdentifier: 
   stepsPerFrame: 2
-  width: 1920
+  width: 1080
   height: 1080
-  numAgents: 100000
-  spawnMode: 2
-  trailWeight: 2
-  decayRate: 0.75
-  diffuseRate: 5
-  speciesSettings:
-  - moveSpeed: 30
-    turnSpeed: -3
-    sensorAngleSpacing: 112
-    sensorOffsetDst: 20
-    sensorSize: 1
+  numFrogs: 160000
