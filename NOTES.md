@@ -4,8 +4,7 @@
 
 # TODO
 
-- Conflict responses (see notes below)
-    - debug
+- get rid of prevPos field and use collision feedback
 - message dispersal example
 - birth+death
 - blur

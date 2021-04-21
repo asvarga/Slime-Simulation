@@ -23,6 +23,8 @@ public class Simulation : MonoBehaviour
 
 	public SlimeSettings settings;
 
+	public bool run = true;
+
 	[Header("Display Settings")]
 	public bool showAgentsOnly;
 	public FilterMode filterMode = FilterMode.Point;
@@ -135,6 +137,7 @@ public class Simulation : MonoBehaviour
 		// FrogInit
 		myCS.SetInt("numFrogs", settings.numFrogs);
 		myCS.SetBuffer(FrogInit, "frogs", frogsBuffer);
+		myCS.SetBuffer(FrogInit, "frogMail", frogMailBuffer);
 		myCS.SetBuffer(FrogInit, "pixels", pixelsBuffer);
 		ComputeHelper.Dispatch(myCS, settings.numFrogs, 1, 1, FrogInit);	
 
@@ -169,9 +172,11 @@ public class Simulation : MonoBehaviour
 
 	void FixedUpdate()
 	{
-		for (int i = 0; i < settings.stepsPerFrame; i++)
-		{
-			RunSimulation();
+		if (run) {
+			for (int i = 0; i < settings.stepsPerFrame; i++)
+			{
+				RunSimulation();
+			}
 		}
 	}
 

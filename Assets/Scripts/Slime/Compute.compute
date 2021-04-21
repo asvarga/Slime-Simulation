@@ -91,6 +91,9 @@ void FrogInit (uint3 id : SV_DispatchThreadID)
 		return;
 	}
 
+    frogs[id.x] = (Frog)0;
+    frogMail[id.x] = (FrogMail)0;
+
     uint s = sqrt(numFrogs);
     int2 pos = int2(id.x/s+(uint)width/2-s/2, id.x%s+(uint)height/2-s/2);
     frogs[id.x].position = pos;         // move frog
@@ -103,6 +106,7 @@ void FrogInit (uint3 id : SV_DispatchThreadID)
     // user should mutate data
 
     data.dir = 0;
+    // data.dir = (pos.x >= width>>1 ? 1 : 0);
     // data.dir = hash(id.x + hash(time * 1000)) % 4; 
     // data.dir = (pos.x*2 + pos.y) % 4;
 
@@ -284,8 +288,10 @@ void PixelInit (uint3 id : SV_DispatchThreadID)
     int2 pos = id.xy;
     int ind = index(pos);
 
+    pixels[ind] = (Pixel)0;
+    pixelMail[ind] = (PixelMail)0;
+
     pixels[ind].occupant = -1;
-    // pixelMail[ind].occupant = -1;
 }
 
 ////////////////////////////////////////////////////////////////
