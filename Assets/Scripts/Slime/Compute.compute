@@ -15,7 +15,6 @@ struct FrogData {
     // <USER>
     uint dir;
     bool debug;
-    int2 prevPos;
     // </USER>
 };
 struct Frog {
@@ -130,12 +129,13 @@ void FrogDisplay (uint3 id : SV_DispatchThreadID)
 	}
 
     int2 pos = frogs[id.x].position;
-    switch (frogs[id.x].data.dir) {
-        case 0: display[pos] = float4(1,0,0,1); break;
-        case 1: display[pos] = float4(1,1,0,1); break;
-        case 2: display[pos] = float4(0,1,0,1); break;
-        case 3: display[pos] = float4(0,1,1,1); break;
-    }
+    // switch (frogs[id.x].data.dir) {
+    //     case 0: display[pos] = float4(1,0,0,1); break;
+    //     case 1: display[pos] = float4(1,1,0,1); break;
+    //     case 2: display[pos] = float4(0,1,0,1); break;
+    //     case 3: display[pos] = float4(0,1,1,1); break;
+    // }
+    display[pos] = float4(0,1,0,1);
     // display[pos] = frogs[id.x].data.debug ? float4(1,0,0,1) : float4(0,1,0,1);
 }
 
@@ -183,22 +183,25 @@ void FrogAct (uint3 id : SV_DispatchThreadID)
 
     int2 pos = frogs[id.x].position;
     FrogData data = frogs[id.x].data;
+    uint status = frogs[id.x].status;
 
     // <USER>
     // user should mutate data and pos
 
-    if (eq(pos, data.prevPos)) {  // failed to move
+    // if (eq(pos, data.prevPos)) {  // failed to move
+    if (status != 1) {  // collided
         // data.dir = hash(id.x + hash(time * 1000)) % 4;  // random new direction
         data.dir = (data.dir + 1) % 4;  // turn 90 deg
         data.debug = true;
     } else {
         data.debug = false;
     }
-    data.prevPos = pos;
-    pos = move(data.prevPos, data.dir);
+    // data.prevPos = pos;
+    int2 prevPos = pos;
+    pos = move(prevPos, data.dir);
     if (!inBounds(pos)) {
         data.dir = (data.dir + 2) % 4;  // turn 180 deg
-        pos = move(data.prevPos, data.dir);
+        pos = move(prevPos, data.dir);
     }
 
     // </USER>
@@ -210,6 +213,8 @@ void FrogAct (uint3 id : SV_DispatchThreadID)
         int ind = index(pos);
         frogMail[id.x].position = pos;
         InterlockedAdd(pixelMail[ind].count, 1);    // atomically increase mail counter
+    } else {
+        frogs[id.x].status == -1;
     }
 
     // frogMail[id.x].data = data;

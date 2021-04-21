@@ -256,12 +256,11 @@ public class Simulation : MonoBehaviour
 		// <USER>
 		uint dir;
 		bool debug;
-		Vector2Int prevPos;
 		// </USER>
 	}
 	struct Frog {
 		Vector2Int position;
-		uint status;
+		int status;
 		FrogData data;
 	}
 	struct FrogMail {
