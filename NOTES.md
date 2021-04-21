@@ -4,6 +4,7 @@
 
 # TODO
 
+- better start positions
 - get rid of prevPos field and use collision feedback
 - message dispersal example
 - birth+death

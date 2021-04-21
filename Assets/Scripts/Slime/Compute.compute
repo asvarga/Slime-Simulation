@@ -95,7 +95,7 @@ void FrogInit (uint3 id : SV_DispatchThreadID)
     frogMail[id.x] = (FrogMail)0;
 
     uint s = sqrt(numFrogs);
-    int2 pos = int2(id.x/s+(uint)width/2-s/2, id.x%s+(uint)height/2-s/2);
+    int2 pos = int2(id.x/s+(width>>1)-s/2, id.x%s+(height>>1)-s/2);
     frogs[id.x].position = pos;         // move frog
     int ind = index(pos);
     pixels[ind].occupant = id.x;        // set occupant
@@ -105,8 +105,8 @@ void FrogInit (uint3 id : SV_DispatchThreadID)
     // <USER>
     // user should mutate data
 
-    data.dir = 0;
-    // data.dir = (pos.x >= width>>1 ? 1 : 0);
+    // data.dir = 0;
+    data.dir = pos.x >= width>>1 ? (pos.y >= height>>1 ? 0 : 3) : (pos.y >= height>>1 ? 1 : 2);
     // data.dir = hash(id.x + hash(time * 1000)) % 4; 
     // data.dir = (pos.x*2 + pos.y) % 4;
 
@@ -149,7 +149,7 @@ void FrogDisplay (uint3 id : SV_DispatchThreadID)
 // A    pixelMail
 
 bool inBounds(int2 pos) {
-    return (pos.x >= 0 && pos.y < width && pos.y >= 0 && pos.y < height);
+    return (pos.x >= 0 && pos.x < width && pos.y >= 0 && pos.y < height);
 }
 
 bool legal(int2 pos) {
@@ -312,10 +312,11 @@ void PixelDisplay (uint3 id : SV_DispatchThreadID)
     int2 pos = id.xy;
     int ind = index(pos);
 
-    bool occupied = (pixels[ind].occupant != -1);
-    bool collision = pixels[ind].collision;
-    display[pos] = occupied ? float4(0,1,0,1) 
-                            : float4(0,0,0,1);
+    // bool occupied = (pixels[ind].occupant != -1);
+    // bool collision = pixels[ind].collision;
+    display[pos] = float4(0,0,0,1);
+    // display[pos] = occupied ? float4(0,1,0,1) 
+    //                         : float4(0,0,0,1);
                             // : (collision ? float4(1,0,0,1) 
                                         //  : float4(0,0,0,1));
 }
