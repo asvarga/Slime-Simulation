@@ -26,7 +26,8 @@ public class Simulation : MonoBehaviour
 	public bool run = true;
 
 	[Header("Display Settings")]
-	public bool showAgentsOnly;
+	public bool displayAgents = true;
+	public bool displayPixels = true;
 	public FilterMode filterMode = FilterMode.Point;
 	public GraphicsFormat format = ComputeHelper.defaultGraphicsFormat;
 
@@ -44,6 +45,7 @@ public class Simulation : MonoBehaviour
 	ComputeBuffer pixelsBuffer;
 	ComputeBuffer pixelMailBuffer;
 
+	int steps = 0;
 
 	protected virtual void Start()
 	{
@@ -162,11 +164,20 @@ public class Simulation : MonoBehaviour
 
 		// FrogDisplay
 		myCS.SetBuffer(FrogDisplay, "frogs", frogsBuffer);
+		myCS.SetBuffer(FrogDisplay, "pixels", pixelsBuffer);	// TODO: remove
 		myCS.SetTexture(FrogDisplay, "display", displayTexture);
 
 		// PixelDisplay
 		myCS.SetBuffer(PixelDisplay, "pixels", pixelsBuffer);
 		myCS.SetTexture(PixelDisplay, "display", displayTexture);
+
+	}
+
+	void Update() {
+		if (Input.GetKeyDown(KeyCode.Space)) {
+			RunSimulation();
+			Debug.Log(steps);
+		}
 
 	}
 
@@ -182,19 +193,31 @@ public class Simulation : MonoBehaviour
 
 	void LateUpdate()
 	{
-		if (showAgentsOnly) {
-			// Clear
-			ComputeHelper.ClearRenderTexture(displayTexture);
-		} else {
+		if (displayPixels) {
 			// PixelDisplay
 			ComputeHelper.Dispatch(myCS, settings.width, settings.height, 1, PixelDisplay);
+		} else {
+			// Clear
+			ComputeHelper.ClearRenderTexture(displayTexture);
 		}
-		// FrogDisplay
-		ComputeHelper.Dispatch(myCS, settings.numFrogs, 1, 1, FrogDisplay);
+		if (displayAgents) {
+			// FrogDisplay
+			ComputeHelper.Dispatch(myCS, settings.numFrogs, 1, 1, FrogDisplay);
+		}
+
+		// if (showAgentsOnly) {
+		// 	// Clear
+		// 	ComputeHelper.ClearRenderTexture(displayTexture);
+		// } else {
+		// 	// PixelDisplay
+		// 	ComputeHelper.Dispatch(myCS, settings.width, settings.height, 1, PixelDisplay);
+		// }
 	}
 
 	void RunSimulation()
 	{
+		
+		steps++;
 
 		// var speciesSettings = settings.speciesSettings;
 		// ComputeHelper.CreateStructuredBuffer(ref settingsBuffer, speciesSettings);

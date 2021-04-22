@@ -237,7 +237,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   myCS: {fileID: 7200000, guid: 94f4c0edd21e54800b2f271736d3cb0c, type: 3}
   settings: {fileID: 11400000, guid: 0367b3dddb285494bbb8c9e43002e188, type: 2}
-  showAgentsOnly: 0
+  run: 1
+  displayAgents: 1
+  displayPixels: 1
   filterMode: 1
   format: 48
   trailMap: {fileID: 0}

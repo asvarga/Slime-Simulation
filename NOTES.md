@@ -4,7 +4,6 @@
 
 # TODO
 
-- fix asymmetry
 - message dispersal example
 - birth+death
 - blur
@@ -18,6 +17,7 @@
 - change `numthreads` in kernels
 - data representation
     - use smaller ints where possible
+    - use int ind instead of int2 pos
 
 # NOTES
 

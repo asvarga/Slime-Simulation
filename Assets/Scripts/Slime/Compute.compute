@@ -129,13 +129,18 @@ void FrogDisplay (uint3 id : SV_DispatchThreadID)
 	}
 
     int2 pos = frogs[id.x].position;
-    // switch (frogs[id.x].data.dir) {
-    //     case 0: display[pos] = float4(1,0,0,1); break;
-    //     case 1: display[pos] = float4(1,1,0,1); break;
-    //     case 2: display[pos] = float4(0,1,0,1); break;
-    //     case 3: display[pos] = float4(0,1,1,1); break;
+    // int ind = index(pos);
+    // if (ind >= 0 && pixels[ind].occupant != id.x) {
+    //     display[pos] = float4(1,0.5,0,1); 
+    //     return;
     // }
-    display[pos] = float4(0,1,0,1);
+    switch (frogs[id.x].data.dir) {
+        case 0: display[pos] = float4(1,0,0,1); break;
+        case 1: display[pos] = float4(1,1,0,1); break;
+        case 2: display[pos] = float4(0,1,0,1); break;
+        case 3: display[pos] = float4(0,1,1,1); break;
+    }
+    // display[pos] = float4(0,1,0,1);
     // display[pos] = frogs[id.x].data.debug ? float4(1,0,0,1) : float4(0,1,0,1);
 }
 
@@ -214,6 +219,7 @@ void FrogAct (uint3 id : SV_DispatchThreadID)
         frogMail[id.x].position = pos;
         InterlockedAdd(pixelMail[ind].count, 1);    // atomically increase mail counter
     } else {
+        frogMail[id.x].position = pos;
         frogs[id.x].status == -1;
     }
 
@@ -240,6 +246,7 @@ void FrogResolve (uint3 id : SV_DispatchThreadID)
 
     int2 oldPos = frogs[id.x].position;
     int2 newPos = frogMail[id.x].position;
+    if (eq(oldPos, newPos)) return;
     int oldInd = index(oldPos);
     int newInd = index(newPos);
 
@@ -317,11 +324,11 @@ void PixelDisplay (uint3 id : SV_DispatchThreadID)
     int2 pos = id.xy;
     int ind = index(pos);
 
-    // bool occupied = (pixels[ind].occupant != -1);
+    bool occupied = (pixels[ind].occupant != -1);
     // bool collision = pixels[ind].collision;
-    display[pos] = float4(0,0,0,1);
-    // display[pos] = occupied ? float4(0,1,0,1) 
-    //                         : float4(0,0,0,1);
+    // display[pos] = float4(0,0,0,1);
+    display[pos] = occupied ? float4(1,1,1,1) 
+                            : float4(0,0,0,1);
                             // : (collision ? float4(1,0,0,1) 
                                         //  : float4(0,0,0,1));
 }

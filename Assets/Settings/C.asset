@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: C
   m_EditorClassIdentifier: 
   stepsPerFrame: 2
-  width: 1080
-  height: 1080
+  width: 1024
+  height: 1024
   numFrogs: 160000
