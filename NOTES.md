@@ -4,13 +4,19 @@
 
 # TODO
 
-- message dispersal example
+- move to new repo
+- write some better random methods
+    - note that currently with multiple steps per frame, they'll all give the same random values
+- message passing (with commutative dynamical types)
+- memo dispersal example
 - birth+death
-- blur
+- environment interaction (pheromones or turing tape?)
+- USER code
 
 # LATER
 
 - Frog and Pixels may update different number of times per frame
+- make it fun
 
 # OPTIMIZE
 
@@ -20,6 +26,29 @@
     - use int ind instead of int2 pos
 
 # NOTES
+
+## Message Passing
+
+- Let the user define a message type
+    - Fields should have commutative monoidal types to avoid race conditions
+    - i.e. they should have a type, a default?, and a single comm+assoc binary operation
+    - structs/tuples work by combining contents element-wise
+    - the interpreter language will provide all legal types
+        - ((u)int, 0, +)
+        - ((u)int, 0, |)
+        - ((u)int, 0, &)
+        - ((?, uint), (?, 0), (:=, inc))   // set value with conflicts resolving to default
+        - structs/tuples
+    - these may also have Readout functions
+- During Act, the user sends Update messages to these fields
+    - this does `value := Update(value, msg)`
+- During Resolve, the system may apply a Readout function before sending to agent
+    - ex: for the simple conflict resolution
+- Note that these fields act as little actors
+    - alternatively, discrete dynamical systems: https://youtu.be/8T-Km3taNko?t=873
+        - but with S == I, and with commutative Update 
+
+## Conflict Resolution
 
 - Conflict responses: **ignore the below strategy**
     - keep the counter
@@ -68,3 +97,5 @@
 - Is it possible to send conflict message to just a single frogMail? (defer)
     - could just send message to self, and check if still in square
     - this is complicated and may not even be faster
+
+##

@@ -15,6 +15,7 @@ struct FrogData {
     // <USER>
     uint dir;
     bool debug;
+    bool flip;
     // </USER>
 };
 struct Frog {
@@ -42,6 +43,7 @@ struct PixelMail {
 
 float time;
 float deltaTime;
+int tick;
 
 uint numFrogs;
 RWStructuredBuffer<Frog> frogs;
@@ -57,8 +59,7 @@ RWTexture2D<float4> display;
 ////////////////////////////////////////////////////////////////
 
 // Hash function www.cs.ubc.ca/~rbridson/docs/schechter-sca08-turbulence.pdf
-uint hash(uint state)
-{
+uint hash(uint state) {
     state ^= 2747636419u;
     state *= 2654435769u;
     state ^= state >> 16;
@@ -74,6 +75,32 @@ uint index(int2 pos) {
 
 int2 position(uint ind) {
     return int2(ind % width, ind / width);
+}
+
+bool inBounds(int2 pos) {
+    return (pos.x >= 0 && pos.x < width && pos.y >= 0 && pos.y < height);
+}
+
+bool legal(int2 pos) {
+    // if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height) return false;
+    // if (!inBounds(pos)) return false;
+    // int ind = index(pos);
+    // return pixels[ind].occupant == -1;
+    return inBounds(pos) && pixels[index(pos)].occupant == -1;
+}
+
+int2 move(int2 pos, uint dir) {
+    switch (dir) {
+        case 0: pos.x++; break;
+        case 1: pos.y++; break;
+        case 2: pos.x--; break;
+        case 3: pos.y--; break;
+    }
+    return pos;
+}
+
+bool eq(int2 p1, int2 p2) {
+    return p1.x == p2.x && p1.y == p2.y;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -106,8 +133,10 @@ void FrogInit (uint3 id : SV_DispatchThreadID)
 
     // data.dir = 0;
     data.dir = pos.x >= width>>1 ? (pos.y >= height>>1 ? 0 : 3) : (pos.y >= height>>1 ? 1 : 2);
-    // data.dir = hash(id.x + hash(time * 1000)) % 4; 
+    // data.dir = hash(id.x + hash(tick)) % 4; 
     // data.dir = (pos.x*2 + pos.y) % 4;
+
+    // data.flip = true;
 
     // </USER>
 
@@ -129,19 +158,29 @@ void FrogDisplay (uint3 id : SV_DispatchThreadID)
 	}
 
     int2 pos = frogs[id.x].position;
+    float4 color = float4(0,0,0,1);
+    FrogData data = frogs[id.x].data;
+
+    // <USER>
+
     // int ind = index(pos);
     // if (ind >= 0 && pixels[ind].occupant != id.x) {
-    //     display[pos] = float4(1,0.5,0,1); 
+    //     color = float4(1,0.5,0,1); 
     //     return;
     // }
-    switch (frogs[id.x].data.dir) {
-        case 0: display[pos] = float4(1,0,0,1); break;
-        case 1: display[pos] = float4(1,1,0,1); break;
-        case 2: display[pos] = float4(0,1,0,1); break;
-        case 3: display[pos] = float4(0,1,1,1); break;
-    }
-    // display[pos] = float4(0,1,0,1);
-    // display[pos] = frogs[id.x].data.debug ? float4(1,0,0,1) : float4(0,1,0,1);
+    // switch (data.dir) {
+    //     case 0: color = float4(1,0,0,1); break;
+    //     case 1: color = float4(1,1,0,1); break;
+    //     case 2: color = float4(0,1,0,1); break;
+    //     case 3: color = float4(0,1,1,1); break;
+    // }
+    color = data.flip ? float4(1,0,0,1) : float4(0,1,0,1);
+    // color = float4(0,1,0,1);
+    // color = data.debug ? float4(1,0,0,1) : float4(0,1,0,1);
+
+    // </USER>
+
+    display[pos] = color;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -152,32 +191,6 @@ void FrogDisplay (uint3 id : SV_DispatchThreadID)
 // W    frogMail
 // R    pixels
 // A    pixelMail
-
-bool inBounds(int2 pos) {
-    return (pos.x >= 0 && pos.x < width && pos.y >= 0 && pos.y < height);
-}
-
-bool legal(int2 pos) {
-    // if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height) return false;
-    // if (!inBounds(pos)) return false;
-    // int ind = index(pos);
-    // return pixels[ind].occupant == -1;
-    return inBounds(pos) && pixels[index(pos)].occupant == -1;
-}
-
-int2 move(int2 pos, uint dir) {
-    switch (dir) {
-        case 0: pos.x++; break;
-        case 1: pos.y++; break;
-        case 2: pos.x--; break;
-        case 3: pos.y--; break;
-    }
-    return pos;
-}
-
-bool eq(int2 p1, int2 p2) {
-    return p1.x == p2.x && p1.y == p2.y;
-}
 
 [numthreads(16,1,1)]
 void FrogAct (uint3 id : SV_DispatchThreadID)
@@ -193,10 +206,16 @@ void FrogAct (uint3 id : SV_DispatchThreadID)
     // <USER>
     // user should mutate data and pos
 
+    if (hash(id.x + hash(tick)) % 1000 == 0) {
+        data.flip = !data.flip;
+    }
+    // data.flip = !data.flip;
+
     // if (eq(pos, data.prevPos)) {  // failed to move
     if (status != 1) {  // collided
-        // data.dir = hash(id.x + hash(time * 1000)) % 4;  // random new direction
-        data.dir = (data.dir + 1) % 4;  // turn 90 deg
+        // data.dir = hash(id.x + hash(tick)) % 4;  // random new direction
+        int turn = data.flip ? 3 : 1;
+        data.dir = (data.dir + turn) % 4;  // turn 90 deg
         data.debug = true;
     } else {
         data.debug = false;
@@ -211,7 +230,7 @@ void FrogAct (uint3 id : SV_DispatchThreadID)
 
     // </USER>
 
-    frogs[id.x].data = data;
+    frogs[id.x].data = data;    // FIXME: is this not working?
 
     // TODO: also check adjacency
     if (legal(pos)) {               // unoccupied

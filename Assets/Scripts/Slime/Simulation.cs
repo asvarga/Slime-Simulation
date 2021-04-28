@@ -45,7 +45,7 @@ public class Simulation : MonoBehaviour
 	ComputeBuffer pixelsBuffer;
 	ComputeBuffer pixelMailBuffer;
 
-	int steps = 0;
+	int tick = 0;
 
 	protected virtual void Start()
 	{
@@ -156,8 +156,8 @@ public class Simulation : MonoBehaviour
 		myCS.SetBuffer(FrogResolve, "pixelMail", pixelMailBuffer);
 
 		// PixelResolve
-		myCS.SetInt("width", settings.width);
-		myCS.SetInt("height", settings.height);
+		myCS.SetInt("width", settings.width);	// TODO: remove?
+		myCS.SetInt("height", settings.height);	// TODO: remove?
 		myCS.SetBuffer(PixelResolve, "pixels", pixelsBuffer);
 		myCS.SetBuffer(PixelResolve, "pixelMail", pixelMailBuffer);
 		myCS.SetBuffer(PixelResolve, "frogs", frogsBuffer);
@@ -176,7 +176,6 @@ public class Simulation : MonoBehaviour
 	void Update() {
 		if (Input.GetKeyDown(KeyCode.Space)) {
 			RunSimulation();
-			Debug.Log(steps);
 		}
 
 	}
@@ -217,7 +216,9 @@ public class Simulation : MonoBehaviour
 	void RunSimulation()
 	{
 		
-		steps++;
+		tick++;
+		myCS.SetInt("tick", tick);
+		myCS.SetFloat("time", Time.fixedTime);
 
 		// var speciesSettings = settings.speciesSettings;
 		// ComputeHelper.CreateStructuredBuffer(ref settingsBuffer, speciesSettings);
@@ -249,7 +250,6 @@ public class Simulation : MonoBehaviour
 
 
 		// FrogAct
-		myCS.SetFloat("time", Time.fixedTime);
 		ComputeHelper.Dispatch(myCS, settings.numFrogs, 1, 1, FrogAct);
 
 		// FrogResolve
@@ -279,6 +279,7 @@ public class Simulation : MonoBehaviour
 		// <USER>
 		uint dir;
 		bool debug;
+		bool flip;
 		// </USER>
 	}
 	struct Frog {
